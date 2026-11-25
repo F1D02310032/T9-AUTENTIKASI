@@ -1,0 +1,89 @@
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.$.token}}
+@forgedToken = GANTI_DENGAN_TOKEN_PALSU_LOKAL
+
+@expiredToken = {{login.response.body.$.token}}
+
+### 1. Register akun uji (jalankan sekali; duplikat menghasilkan 409)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "aditya.f1d02310032@example.com",
+  "password": "FilmTugas9!2026"
+}
+
+### 2. Login; token disimpan otomatis ke @token
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "aditya.f1d02310032@example.com",
+  "password": "FilmTugas9!2026"
+}
+### 3. Daftar film publik tanpa token (200)
+GET {{baseUrl}}/movies?halaman=1&ukuran=10
+
+### 4. Tambah film tanpa token (401 TOKEN_DIPERLUKAN)
+POST {{baseUrl}}/movies
+Content-Type: application/json
+
+{
+  "title": "ADITYA Tugas 9 Auth",
+  "director": "ADITYA",
+  "releaseYear": 2026,
+  "rating": 8.5,
+  "durationMinutes": 130,
+  "isAvailable": true,
+  "seats": 30,
+  "genreId": 1
+}
+
+### 5. Tambah film dengan token (201; jalankan setelah request 2 dan isi @token)
+POST {{baseUrl}}/movies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "ADITYA sang raja iblis",
+  "director": "ADITYA",
+  "releaseYear": 2026,
+  "rating": 8.5,
+  "durationMinutes": 130,
+  "isAvailable": true,
+  "seats": 30,
+  "genreId": 1
+}
+
+### Identitas dari token (200)
+GET {{baseUrl}}/auth/saya
+Authorization: Bearer {{token}}
+
+### GET genre publik tanpa token (200)
+GET {{baseUrl}}/genres
+
+### Percobaan 1 - token dipalsukan (harus 401 TOKEN_TIDAK_VALID)
+# Uji: ADITYA | NIM F1D02310032
+# Token asalnya dari respons request Login di atas. Ubah nilai id pada segmen
+# payload (bagian tengah JWT) secara lokal, pertahankan signature, lalu isi
+# @forgedToken di atas dengan JWT hasil perubahan. Jangan bagikan token asli.
+GET {{baseUrl}}/auth/saya
+Authorization: Bearer {{forgedToken}}
+
+### Percobaan 2 - token expired (harus 401 TOKEN_TIDAK_VALID)
+# Uji: ADITYA | NIM F1D02310032
+# Ubah expiresIn sementara menjadi '5s' dan restart API. Jalankan Login, salin
+# token dari responsnya ke @expiredToken, tunggu lebih dari 6 detik, lalu kirim
+# request ini. Setelah pengujian, kembalikan expiresIn ke '2h' dan restart API.
+GET {{baseUrl}}/auth/saya
+Authorization: Bearer {{expiredToken}}
+
+### Login gagal (401 LOGIN_GAGAL)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "aditya.f1d02310032@example.com",
+  "password": "password-salah"
+}
